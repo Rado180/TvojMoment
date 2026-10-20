@@ -101,3 +101,22 @@ export async function getMeditation(id: string) {
   if (error) throw error
   return withUrls(data as Meditation)
 }
+
+export type Subscription = { status: string; plan_type: string | null; expires_at: string | null }
+
+export async function getMySubscription(userId: string) {
+  const { data, error } = await supabase
+    .from('hm_subscriptions')
+    .select('status, plan_type, expires_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data as Subscription | null
+}
+
+export function isActive(sub: Subscription | null) {
+  if (!sub || sub.status !== 'active') return false
+  return !sub.expires_at || new Date(sub.expires_at) > new Date()
+}
