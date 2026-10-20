@@ -45,7 +45,7 @@ export default function Home() {
               to={`/vyzva/${challenge.id}`}
               className="group overflow-hidden rounded-3xl bg-dusk/70 ring-1 ring-white/5 transition hover:ring-glow/40"
             >
-              <div className="aspect-video bg-night">
+              <div className="aspect-video bg-gradient-to-br from-[#3b4a85] via-dusk to-[#5a3f6b]">
                 {challenge.image_url && (
                   <img src={challenge.image_url} alt="" loading="lazy" className="size-full object-cover" />
                 )}

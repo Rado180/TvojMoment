@@ -25,6 +25,21 @@ export type Meditation = {
   mood_tag: string | null
 }
 
+// V databáze sú väčšinou len názvy súborov; doplníme verejnú URL z príslušného bucketu.
+function storageUrl(bucket: string, path: string | null) {
+  if (!path) return null
+  if (/^https?:\/\//.test(path)) return path
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl
+}
+
+function withUrls(m: Meditation): Meditation {
+  return { ...m, image_url: storageUrl('hm_images', m.image_url), audio_url: storageUrl('hm_audio', m.audio_url) }
+}
+
+function challengeWithUrl(c: Challenge): Challenge {
+  return { ...c, image_url: storageUrl('hm_images', c.image_url) }
+}
+
 const MEDITATION_FIELDS =
   'id, category_id, challenge_id, day_number, title, description, audio_url, image_url, is_premium, duration_seconds, mood_tag'
 
@@ -46,7 +61,7 @@ export async function getChallenges() {
     .select('id, title, description, image_url, total_days, display_order')
     .order('display_order', { nullsFirst: false })
   if (error) throw error
-  return data as Challenge[]
+  return (data as Challenge[]).map(challengeWithUrl)
 }
 
 export async function getChallenge(id: string) {
@@ -56,7 +71,7 @@ export async function getChallenge(id: string) {
     .eq('id', id)
     .single()
   if (error) throw error
-  return data as Challenge
+  return challengeWithUrl(data as Challenge)
 }
 
 // Samostatné meditácie v kategórii (bez tých, ktoré patria do výzvy).
@@ -68,7 +83,7 @@ export async function getStandaloneMeditations(categoryId: string) {
     .is('challenge_id', null)
     .order('title')
   if (error) throw error
-  return data as Meditation[]
+  return (data as Meditation[]).map(withUrls)
 }
 
 export async function getChallengeMeditations(challengeId: string) {
@@ -78,11 +93,11 @@ export async function getChallengeMeditations(challengeId: string) {
     .eq('challenge_id', challengeId)
     .order('day_number')
   if (error) throw error
-  return data as Meditation[]
+  return (data as Meditation[]).map(withUrls)
 }
 
 export async function getMeditation(id: string) {
   const { data, error } = await supabase.from('hm_meditations').select(MEDITATION_FIELDS).eq('id', id).single()
   if (error) throw error
-  return data as Meditation
+  return withUrls(data as Meditation)
 }
